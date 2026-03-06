@@ -1,3 +1,7 @@
+body {
+  background-color: white;
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -5,17 +9,60 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.body-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+.homepage-banner {
+  background-color: rgb(99, 151, 255);
+  border-radius: 10px;
+  padding: 20px;
+  padding-top: 15px;
+  padding-bottom: 35px;
+
+  width: 80vw;
+
+  position: relative;
+  right: 10px;
 }
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px; 
+
+  margin-top: none;
+  position: relative;
+  right: 10px;
+  top: 20px;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 400;
+
+  color: white;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 200;
+
+  color: white;
+}
+
+button {
+  background-color: white;
+  border: none;
 }
 
 @keyframes logo-spin {
