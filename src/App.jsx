@@ -7,6 +7,8 @@ import { LiquidGlass }  from '@liquidglass/react';
 
 import generateTranscript from './backend/assemblyai.jsx'
 
+import get_feedback from './backend/llm.jsx'
+
 function App() {
   const [count, setCount] = useState(0);
   const [permission, setPermission] = useState(false);

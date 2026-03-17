@@ -1,8 +1,11 @@
 import { AssemblyAI } from "assemblyai";
 
+const AssemblyAIKey = import.meta.env.VITE_APP_ASSEMBLY_AI_KEY;
+
 const client = new AssemblyAI({
-  apiKey: "ec1ab29aaca24872936aad29f632ec2e",
+  apiKey: AssemblyAIKey,
 });
+
 
 export default async function generateTranscript(audioFile) {
     const params = {

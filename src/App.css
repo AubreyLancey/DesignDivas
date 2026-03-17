@@ -13,6 +13,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  color: black;
 }
 
 .homepage-banner {
@@ -50,13 +51,13 @@ h2 {
   font-size: 20px;
   font-weight: 400;
 
-  color: white;
+  color: black;
 }
 
 h3 {
   font-size: 15px;
   font-weight: 200;
-  color: white;
+  color: black;
 }
 
 button {
@@ -114,7 +115,7 @@ button {
 }
 
 .popup-content {
-  background-color: white;
+  background-color: black;
   padding: 20px;
   border-radius: 10px 10px 0 0;
   width: 100%;
