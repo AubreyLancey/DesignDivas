@@ -19,6 +19,7 @@ function App() {
   const [audio, setAudio] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
 
+
   const [showPopup, setShowPopup] = useState(false);
 
   const mediaRecorder = useRef(null);
@@ -151,14 +152,6 @@ function App() {
           <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
           <h4 style={{color:"black"}}>Clip. 1</h4>
         </div>
-        <div onClick={openFeedback} className='grid-item'>
-          <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
-          <h4 style={{color:"black"}}>Clip. 2</h4>
-        </div>
-        <div onClick={openFeedback} className='grid-item'>
-          <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
-          <h4 style={{color:"black"}}>Clip. 3</h4>
-        </div>
       </div>
 
       <div className="audio-controls">
@@ -186,7 +179,14 @@ function App() {
               </a>
             </div>
           ) : null} */}
-          <LiquidGlass><button onClick={handleTranscribe} style={{ border: 'none', background: 'transparent' }}>Generate Transcript</button></LiquidGlass>
+
+
+          {/* BUTTONS FOR TRANSCRIPT AND FEEDBACK */}
+          <LiquidGlass><button onClick={handleTranscribe} style={{ border: 'black', background: 'none' }}>Generate Transcript</button></LiquidGlass>
+          <LiquidGlass><button onClick={() => get_feedback(transcript)} style={{ border: 'none', background: 'none' }}>Get Feedback</button></LiquidGlass>
+
+          <LiquidGlass><button onClick={() => handleTranscribe.then(get_feedback(transcript).then())} style={{ border: 'none', background: 'none' }}>All-in-one</button></LiquidGlass>
+      
       </div>
 
       {showPopup && (

@@ -1,11 +1,11 @@
-const openAIKey = meta.env.VITE_OPEN_AI_KEY;
+const openAIKey = import.meta.env.VITE_APP_OPEN_AI_KEY;
 
 export default async function get_feedback(text) {
 
-    const prompt = `hello ${text}`
-    alert(prompt)
+    // const prompt = `analyze the following transcript: ${text}`
+    const prompt = `Provide me some speech-related feedback on this text: ${text}`
+    // alert(prompt)
 
-    return
     const res = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -14,11 +14,20 @@ export default async function get_feedback(text) {
       },
       body: JSON.stringify({
         model: "gpt-5.4",
-        input: `Give clear, specific writing feedback on this text:\n\n${text}`
+        input: prompt
       }),
     });
 
     const data = await res.json();
 
-    return data.output_text || "No feedback returned";
+
+    const output =
+        data.output_text ??
+        data.output?.[0]?.content?.[0]?.text ??
+        "No feedback returned";
+
+    alert(output);
+
+    return output;
+
 }
