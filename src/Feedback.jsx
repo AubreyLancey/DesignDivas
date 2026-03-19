@@ -1,4 +1,6 @@
 import { CircularProgressbar } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
+
 
 
 function Feedback() {
@@ -80,7 +82,7 @@ function Feedback() {
         }`
     const json_output = JSON.parse(sampleOutput) 
 
-    const score = 90
+    const score = 8
 
     return(
         <>
@@ -90,12 +92,6 @@ function Feedback() {
                 text={`${score * 10}%`}
             />
             </div>
-            <h2>Map Keys as H1 Headings:</h2>
-                {Array.from(json_output.keys()).map((key) => (
-                    // 3. Render each key inside an <h1> tag
-                    // Be sure to add a unique 'key' prop to each element for React's optimization
-                    <h1 key={key}>{key}</h1>
-                ))}
         </>
     );
 } 
