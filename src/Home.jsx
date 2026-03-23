@@ -23,7 +23,6 @@ function Home() {
   const [audio, setAudio] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
 
-
   const [showPopup, setShowPopup] = useState(false);
 
   const mediaRecorder = useRef(null);
@@ -32,11 +31,17 @@ function Home() {
 
 
   const [transcript, setTranscript] = useState("N/A");
+
+
+  const [words, setWords] = useState("N/A");
+  const [feedback, getFeedback] = useState("");
   
   const handleTranscribe = async () => {
     const result = await generateTranscript(audioBlob);
     setTranscript(result.text);
-    alert(result.text)
+    // alert(result.text);
+    alert(JSON.stringify(result.words));
+    setWords(result.words);
   };
 
   const getMicrophonePermission = async () => {
@@ -150,11 +155,32 @@ function Home() {
           ) : null}
       </div>
       </div>
+
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+  <button 
+    onClick={handleTranscribe} 
+    style={{ border: 'black', background: 'none' }}
+  >
+    Generate Transcript
+  </button>
+
+  <button
+    onClick={async () => {
+      const feedbackData = await get_feedback(transcript);
+      navigate("/Feedback", { state: { words: words, json: feedbackData } });
+    }}
+    style={{ border: 'none', background: 'none' }}
+  >
+  Get Feedback
+  </button>
+
+</div>
       
       <div className='grid-container'>
         <div onClick={openFeedback} className='grid-item'>
           <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
           <h4 style={{color:"black"}}>Clip. 1</h4>
+          <h4 style={{color: 'black'}}>hello</h4>
         </div>
       </div>
 
@@ -186,17 +212,16 @@ function Home() {
 
 
           {/* BUTTONS FOR TRANSCRIPT AND FEEDBACK */}
-          <button onClick={async () => {
+          {/* <button onClick={async () => {
             const result = await get_feedback(sampleInput);
             alert(result[1]);
           }}>
             TEST
-          </button>
-          <button onClick={handleTranscribe} style={{ border: 'black', background: 'none' }}>Generate Transcript</button>
-          <button onClick={() => get_feedback(transcript)} style={{ border: 'none', background: 'none' }}>Get Feedback</button>
+          </button> */}
+          
 
-          <button onClick={() => handleTranscribe.then(get_feedback(transcript).then())} style={{ border: 'none', background: 'none' }}>All-in-one</button>
-          <button onClick={() => navigate('/Feedback')}>Feedback Page</button>
+          {/* <button onClick={() => handleTranscribe.then(get_feedback(transcript).then())} style={{ border: 'none', background: 'none' }}>All-in-one</button>
+          <button onClick={() => navigate('/Feedback')}>Feedback Page</button> */}
       </div>
 
       {showPopup && (

@@ -1,9 +1,16 @@
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 
+import { useLocation } from 'react-router-dom';
 
 
 function Feedback() {
+    const location = useLocation();
+    const { words, json } = location.state || {};
+
+    alert(words);
+    alert(json);
+
     const sampleOutput=`{
         "speech_type": "casual presentation",
         "quick_read": "A casual, friendly history of skateboarding with frequent fillers. The main milestones are clear (origin, 1970s wheel tech, 80s-90s culture, today’s Olympic status), but the delivery is choppy due to filler and hedging. With tighter signposting and shorter sentences, it would feel more confident and engaging.",
@@ -80,18 +87,63 @@ function Feedback() {
             }
         ]
         }`
-    const json_output = JSON.parse(sampleOutput) 
+
+    // const json_output = JSON.parse(sampleOutput) 
+    
+    // new one
+    const json_output = JSON.parse(json);
+
+    // const sampleWords = '[{"text":"Hello,","start":1250,"end":1595,"confidence":0.88662237,"speaker":null},{"text":"my","start":1612,"end":1842,"confidence":0.9996879,"speaker":null},{"text":"name","start":1842,"end":2039,"confidence":0.99981135,"speaker":null},{"text":"is","start":2089,"end":2220,"confidence":0.99952495,"speaker":null},{"text":"Rantaro.","start":2253,"end":2829,"confidence":0.36771432,"speaker":null}]'
+    
+    //new one
+    const sampleWords = words;
+    const json_sampleWords = JSON.parse(sampleWords)
+
+    const confidence_aggregate = (json_sampleWords.reduce((sum, w) => sum + w.confidence, 0) / json_sampleWords.length).toFixed(3);
+    const words_per_minute = (json_sampleWords.length / ((json_sampleWords[json_sampleWords.length - 1].end - json_sampleWords[0].start) / 60000)).toFixed(1);
 
     const score = 8
 
+    const breakdown = json_output.filler_words.breakdown;
+
+    const top2 = Object.entries(breakdown).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([word]) => word).join(', ')
+    
+    // const blockMs = 10000;
+    // const totalDuration = json_sampleWords[json_sampleWords.length - 1].end;
+    // const blocks = [];
+
+    // for (let t = 0; t < totalDuration; t += blockMs) {
+    //     const chunk = json_sampleWords.filter(w => w.start >= t && w.start < t + blockMs);
+    //     if (chunk.length > 0) {
+    //         const wpm = chunk.length / (blockMs / 60000);
+    //         blocks.push(wpm);
+    //     }
+    // }
+
+    // const mean = blocks.reduce((sum, v) => sum + v, 0) / blocks.length;
+    // const stdDev = Math.sqrt(blocks.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / blocks.length);
+
+    // const consistency_score = Math.max(0, (10 - (stdDev / 6))).toFixed(1);
+
+
     return(
         <>
-            <div style={{ width: 100 }}>
-            <CircularProgressbar
-                value={score * 10}
-                text={`${score * 10}%`}
-            />
+            <h1 style={{color:"black"}}>{json_output.speech_type}</h1>
+
+            <div style={{ width: 100 , display: "flex", flexDirection: 'row', gap: 50}}>
+            <div>
+                <h3>Word pronounciation:</h3>
+                <CircularProgressbar
+                    value={confidence_aggregate * 100}
+                    text={`${confidence_aggregate * 100}%`}
+                />
             </div>
+            <h3>Words per minute: {words_per_minute}</h3>
+            </div>
+            <div>
+                <h3>filler word count: {json_output.filler_words.total_count}<br/>most used: {top2}</h3>
+            </div>
+            
         </>
     );
 } 
