@@ -8,15 +8,22 @@ const client = new AssemblyAI({
 
 
 export default async function generateTranscript(audioFile) {
+    //alert("1");
     const params = {
         audio: audioFile,
         "language_detection": true,
         "speech_models": ["universal-3-pro", "universal-2"]
     };
 
+    //alert("2");
+    //alert(params);
+
     const transcript = await client.transcripts.transcribe(params);
 
-    console.log(transcript.text);
+    //alert("3");
+
+    //alert(transcript.text);
+    alert("Transcript created");
 
     return transcript
 }

@@ -94,12 +94,23 @@ All score fields are integers from 1 to 10. The things_to_try array should conta
     const data = await res.json();
 
 
-    const output =
+    // Extract text from nested structure: output[1] contains the message, output[0] is reasoning
+    const output_text =
         data.output_text ??
+        data.output?.[1]?.content?.[0]?.text ??
         data.output?.[0]?.content?.[0]?.text ??
         "No feedback returned";
 
-    //alert(output);
+    let parsed_feedback = null;
+    try {
+      parsed_feedback = JSON.parse(output_text);
+    } catch (err) {
+      console.warn('Could not parse feedback text as JSON; returning raw text', err);
+    }
 
-    return [output, data];
+    return {
+      raw: output_text,
+      parsed: parsed_feedback,
+      openai: data,
+    };
 }

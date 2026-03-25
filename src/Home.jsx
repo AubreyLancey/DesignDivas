@@ -9,7 +9,6 @@ import get_feedback from './backend/llm.jsx'
 
 import { useNavigate } from 'react-router-dom';
 
-
 function Home() {
   const navigate = useNavigate();
 
@@ -33,14 +32,16 @@ function Home() {
   const [transcript, setTranscript] = useState("N/A");
 
 
-  const [words, setWords] = useState("N/A");
-  const [feedback, getFeedback] = useState("");
+  const [words, setWords] = useState([]);
+  const [feedbackData, setFeedbackData] = useState(null);
   
   const handleTranscribe = async () => {
+    //alert("transcroption started");
     const result = await generateTranscript(audioBlob);
+    //alert(result);
     setTranscript(result.text);
-    // alert(result.text);
-    alert(JSON.stringify(result.words));
+    //alert(result.text);
+    //alert(JSON.stringify(result.words));
     setWords(result.words);
   };
 
@@ -56,10 +57,10 @@ function Home() {
         setStream(streamData);
 
       } catch (err) {
-        alert(err.message);
+        //alert(err.message);
       }
     } else {
-      alert("The MediaRecorder API is not supported in your browser.");
+      //alert("The MediaRecorder API is not supported in your browser.");
     }
   };
 
@@ -106,7 +107,20 @@ function Home() {
     setShowPopup(false);
   };
 
-
+  const handleGetFeedback = async () => {
+    if (!transcript || transcript === "N/A") {
+      //alert("Please generate a transcript before getting feedback.");
+      return;
+    }
+    try {
+      const fb = await get_feedback(transcript);
+      setFeedbackData(fb);
+      navigate("/Feedback", { state: { words, feedback: fb } });
+    } catch (error) {
+      console.error("Error fetching feedback", error);
+      //alert("Failed to get feedback, please try again.");
+    }
+  };
 
   return (
     <div className='body-container'>
@@ -165,10 +179,7 @@ function Home() {
   </button>
 
   <button
-    onClick={async () => {
-      const feedbackData = await get_feedback(transcript);
-      navigate("/Feedback", { state: { words: words, json: feedbackData } });
-    }}
+    onClick={handleGetFeedback}
     style={{ border: 'none', background: 'none' }}
   >
   Get Feedback
@@ -214,7 +225,7 @@ function Home() {
           {/* BUTTONS FOR TRANSCRIPT AND FEEDBACK */}
           {/* <button onClick={async () => {
             const result = await get_feedback(sampleInput);
-            alert(result[1]);
+            //alert(result[1]);
           }}>
             TEST
           </button> */}
