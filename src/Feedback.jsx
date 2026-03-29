@@ -7,9 +7,18 @@ import { useLocation } from 'react-router-dom';
 
 function Feedback() {
     const location = useLocation();
-    const { words, feedback } = location.state || {};
+    const { words, feedback, transcript } = location.state || {};
 
     //alert("Feedback component received feedback: " + JSON.stringify(feedback));
+    const sample_transcript = `Hello and good afternoon, everyone. Um, my name is Ray. For our project in EDD, we will be creating a voice recorder that essentially takes input from our device and sends it to the cloud where we then analyze your voice to detect any filler words, your speech patterns, how fast you talk, all of that kinda stuff.
+
+And we use our AI models, our specially trained AI models, to give you a score of how well you presented or how well you talk on a day-to-day basis. Our product is extremely versatile, meaning you can deploy it at any time. The device fits in your pocket, and our device boasts 32GB of memory, allowing you to talk for many, many hours without ever worrying about the battery or storage running out.
+
+In addition, The chassis is made of PLA 3D printed material, providing an eco-friendly and very robust design. The battery is rechargeable with up to 30 hours of use, and the website is easy to access with your phone.
+
+`
+    const the_transcript = transcript || sample_transcript;
+
 
     const sampleOutput = `{
         "speech_type": "casual presentation",
@@ -26,6 +35,7 @@ function Feedback() {
             "i_mean": 0,
             "other": 4
             },
+            "all_filler_list": ["um", "uh", "like", "you know", "literally", "basically", "I mean", "kinda", "er"],            
             "patterns_noted": "Heavy use of um/uh and like; several occurrences of 'kinda' and phrases like 'I think' that dilute authority; rhythm is interrupted by frequent hesitations."
         },
         "dimensions": {
@@ -87,6 +97,9 @@ function Feedback() {
             }
         ]
     }`;
+
+
+
 
     const sampleWords = `[
     { "text": "Hello", "start": 1861, "end": 2696, "confidence": 0.9552518, "speaker": null },
@@ -310,12 +323,12 @@ function Feedback() {
     const fillerRatio = totalWords > 0 ? (filler_total / totalWords) : 0;
     const fillerRatioPercent = (fillerRatio * 100).toFixed(1);
 
-    const top2 = Object.entries(breakdown)
-    .filter(([_, count]) => count > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-    .map(([word]) => word)
-    .join(', ') || 'None';
+    // const top2 = Object.entries(breakdown)
+    // .filter(([_, count]) => count > 0)
+    // .sort((a, b) => b[1] - a[1])
+    // .slice(0, 2)
+    // .map(([word]) => word)
+    // .join(', ') || 'None';
 
 
     const dimensionNames = {
@@ -334,23 +347,35 @@ function Feedback() {
     const intervals = [];
     for (let t = startTime; t < endTime; t += intervalMs) {
     const intervalStart = t;
-    const intervalEnd = Math.min(t + intervalMs, endTime); // handle last shorter interval
+    const intervalEnd = Math.min(t + intervalMs, endTime);
 
     const count = wordsArray.filter(
         word => word.start >= intervalStart && word.start < intervalEnd
     ).length;
 
-    const durationMinutes = (intervalEnd - intervalStart) / 60000; // actual duration in minutes
+    const durationMinutes = (intervalEnd - intervalStart) / 60000;
     const wpm = durationMinutes > 0 ? count / durationMinutes : 0;
 
     intervals.push({
-        time: (intervalStart - startTime) / 1000, // seconds from start
+        time: (intervalStart - startTime) / 1000,
         wpm
     });
     }
 
+    const fillerWordsList = json_output?.filler_words?.all_filler_list || [];
+    const highlightTranscript = (text, highlightWords) => {
+        if (!highlightWords || highlightWords.length === 0) return text;
+        const regex = new RegExp(`\\b(${highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'gi');
+        const parts = text.split(regex);
+        return parts.map((part, i) =>
+            highlightWords.some(w => w.toLowerCase() === part.toLowerCase())
+                ? <mark key={i} style={{ backgroundColor: '#ffe066', borderRadius: '3px', padding: '0 2px' }}>{part}</mark>
+                : part
+        );
+    };
+
     return(
-        <div style={{ margin: '-30px', padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ margin: '-30px', padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 30 }}>
             
             <div style={{ width: '100%', maxWidth: '600px' }}>
                 {/* Header */}
@@ -403,14 +428,16 @@ function Feedback() {
                             segmentColors={['#e0e0e0', '#66cc66', '#e0e0e0']}
                         />
                     </div>
-                    <div style={{ textAlign: 'center', width: '100%' }}>
+                    <div style={{ textAlign: 'center', width: '100%'}}>
                         <h4 style={{color: '#333'}}>Over Time</h4>
-                        <LineChart width={300} height={200} data={intervals} margin={{bottom:30}}>
-                        <XAxis dataKey="time" label={{ value: "Time (s)", position: "bottom", offset: 0 }}
-                            tick={{ dy: 5 }} />                           
-                        <YAxis label={{ value: "WPM", angle: -90, position: "insideLeft" }}/>
-                        <Line type="monotone" dataKey="wpm" stroke="#28a745" strokeWidth={2}/>
-                        </LineChart>
+                        <div style={{display: "flex", justifyContent: 'center'}}>
+                            <LineChart width={300} height={200} data={intervals} margin={{bottom:30}}>
+                                <XAxis dataKey="time" label={{ value: "Time (s)", position: "bottom", offset: 0 }}
+                                    tick={{ dy: 5 }} />                           
+                                <YAxis label={{ value: "WPM", angle: -90, position: "insideLeft" }}/>
+                                <Line type="monotone" dataKey="wpm" stroke="#28a745" strokeWidth={2}/>
+                            </LineChart>
+                        </div>
                     </div>
 
 
@@ -421,7 +448,6 @@ function Feedback() {
                             {filler_total} <br/>
                             <span style={{ fontSize: '14px', color: 'gray' }}> ({fillerRatioPercent}% of words) </span>
                         </p>
-                        <p style={{color: '#666', fontSize: '14px'}}>Most used: {top2}</p>
                     </div>
                 </div>
 
@@ -530,6 +556,32 @@ function Feedback() {
                             </div>
                         </div>
                     ))}
+                </div>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr',
+                    gap: '0px',
+                    marginTop: '40px',
+                }}>
+                    <h2>Transcript</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <mark style={{ backgroundColor: '#ffe066', borderRadius: '3px', padding: '0 6px', fontSize: '14px' }}>word</mark>
+                        <span style={{ color: '#666', fontSize: '14px' }}>= detected filler word</span>
+                    </div>
+
+                    <div style={{
+                        backgroundColor: '#fff',
+                        padding: '20px',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        border: '1px solid #e0e0e0',
+                        textAlign: 'left'
+
+                    }}>
+                        <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                            {highlightTranscript(the_transcript, fillerWordsList)}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

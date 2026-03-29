@@ -115,7 +115,7 @@ function Home() {
     try {
       const fb = await get_feedback(transcript);
       setFeedbackData(fb);
-      navigate("/Feedback", { state: { words, feedback: fb } });
+      navigate("/Feedback", { state: { words, feedback: fb, transcript: transcript } });
     } catch (error) {
       console.error("Error fetching feedback", error);
       //alert("Failed to get feedback, please try again.");

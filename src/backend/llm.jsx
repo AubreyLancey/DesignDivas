@@ -37,6 +37,7 @@ json
       "i_mean": 0,
       "other": 0
     },
+    "all_filler_list": list of all filler words identified (e.g., ["um", "uh", "like", "you know", "literally", "basically", "I mean", "kinda", "er"]),
     "patterns_noted": "string — any notable filler habits or patterns observed"
   },
   "dimensions": {
