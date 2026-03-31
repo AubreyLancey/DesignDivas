@@ -115,6 +115,7 @@ function Home() {
     try {
       const fb = await get_feedback(transcript);
       setFeedbackData(fb);
+      // alert(fb);
       navigate("/Feedback", { state: { words, feedback: fb, transcript: transcript } });
     } catch (error) {
       console.error("Error fetching feedback", error);
@@ -190,8 +191,8 @@ function Home() {
       <div className='grid-container'>
         <div onClick={openFeedback} className='grid-item'>
           <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
-          <h4 style={{color:"black"}}>Clip. 1</h4>
-          <h4 style={{color: 'black'}}>hello</h4>
+          <h4 style={{color:"black"}}>Storing transcripts to-be-implemented</h4>
+          {/* <h4 style={{color: 'black'}}>hello</h4> */}
         </div>
       </div>
 
