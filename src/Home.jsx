@@ -8,10 +8,11 @@ import generateTranscript from './backend/assemblyai.jsx'
 import get_feedback from './backend/llm.jsx'
 
 import { useNavigate } from 'react-router-dom';
+import { supabase } from './backend/supabase.js'
+
 
 function Home() {
   const navigate = useNavigate();
-
 
   const [count, setCount] = useState(0);
   const [permission, setPermission] = useState(false);
@@ -99,12 +100,16 @@ function Home() {
     audioElement.play();
   };
 
-  const openFeedback = () => {
+  const [selectedClip, setSelectedClip] = useState(null);
+
+  const openFeedback = (clip) => {
+    setSelectedClip(clip);
     setShowPopup(true);
   };
 
   const closeFeedback = () => {
     setShowPopup(false);
+    setSelectedClip(null);
   };
 
   const handleGetFeedback = async () => {
@@ -123,8 +128,203 @@ function Home() {
     }
   };
 
+  const [clips, setClips] = useState([]);
+
+  useEffect(() => {
+    const fetchClips = async () => {
+      try {
+        // 1. Fetch saved_data rows
+        const { data: savedRows, error: savedError } = await supabase
+          .from('saved_data')
+          .select('id, file_name, transcript, feedback, words');
+
+        if (savedError) {
+          console.error('Error fetching saved_data:', savedError);
+          return;
+        }
+
+        // 2. List files in storage
+        const { data: files, error: listError } = await supabase
+          .storage
+          .from('audio_files')
+          .list('', { limit: 100 });
+
+        if (listError) {
+          console.error('Error listing storage files:', listError);
+          return;
+        }
+
+        // 3. Insert any new files not already in saved_data
+        const existingNames = savedRows.map(r => r.file_name);
+        const newFiles = files.filter(f => !existingNames.includes(f.name));
+
+        if (newFiles.length > 0) {
+          const { error: insertError } = await supabase
+            .from('saved_data')
+            .insert(newFiles.map(f => ({ file_name: f.name })));
+
+          if (insertError) console.error('Error inserting new rows:', insertError);
+        }
+
+        // 4. Merge storage info with database info
+        const mergedRows = await Promise.all(
+          files.map(async (file) => {
+            // get signed URL
+            const { data: signedData, error: urlError } = await supabase
+              .storage
+              .from('audio_files')
+              .createSignedUrl(file.name, 60);
+
+            if (urlError) console.error(urlError);
+
+            // find database row (after insertion, there should be one)
+            const dbRow = savedRows.find(r => r.file_name === file.name) || {};
+
+            return {
+              name: file.name,
+              url: signedData.signedUrl,
+              transcript: dbRow.transcript || null,
+              feedback: dbRow.feedback || null,
+              words: dbRow.words || null
+            };
+          })
+        );
+
+        setClips(mergedRows);
+        console.log(mergedRows)
+      } catch (err) {
+        console.error('Unexpected error in fetchClips:', err);
+      }
+    };
+
+    fetchClips();
+  }, []);
+const handleTranscribeClip = async (clip) => {
+    try {
+      // 1. Fetch row by file_name
+      const { data: row, error: fetchError } = await supabase
+        .from('saved_data')
+        .select('id, transcript, words')
+        .eq('file_name', clip.name.trim())
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching row:', fetchError);
+        alert('Failed to fetch row for ' + clip.name);
+        return;
+      }
+
+      if (!row) {
+        alert('No row found for ' + clip.name);
+        return;
+      }
+
+      if (row.transcript) {
+        alert('Transcript already exists for ' + clip.name);
+        return;
+      }
+
+      // 2. Generate transcript
+      const response = await generateTranscript(clip.url);
+      const transcriptText = response.text;
+      const wordsArray = response.words; // make sure your generateTranscript returns words
+
+      if (!transcriptText) {
+        alert('Transcription failed for ' + clip.name);
+        return;
+      }
+
+      // 3. Update saved_data row
+      const { error: updateError } = await supabase
+        .from('saved_data')
+        .update({ transcript: transcriptText, words: wordsArray })
+        .eq('file_name', clip.name.trim());
+
+      if (updateError) {
+        console.error('Error updating transcript/words:', updateError);
+        alert('Failed to save transcript for ' + clip.name);
+        return;
+      }
+
+      alert('Transcript saved for ' + clip.name);
+
+      // 4. Update local clips state so UI updates
+      setClips((prev) =>
+        prev.map((c) =>
+          c.name === clip.name
+            ? { ...c, transcript: transcriptText, words: wordsArray }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error('Unexpected error in handleTranscribeClip:', err);
+      alert('Something went wrong for ' + clip.name);
+    }
+  };
+
+  const handleGenerateFeedback = async (clip) => {
+    try {
+      // 1. Fetch the row for this clip
+      const { data: row, error: fetchError } = await supabase
+        .from('saved_data')
+        .select('id, transcript, words, feedback')
+        .eq('file_name', clip.name.trim())
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching row:', fetchError);
+        alert('Failed to fetch row for ' + clip.name);
+        return;
+      }
+
+      if (!row) {
+        alert('No row found for ' + clip.name);
+        return;
+      }
+
+      if (!row.transcript) {
+        alert('Please transcribe the clip first.');
+        return;
+      }
+
+      if (row.feedback) {
+        alert('Feedback already exists for ' + clip.name);
+        return;
+      }
+
+      // 2. Generate feedback
+      const feedbackResult = await get_feedback(row.transcript);
+
+      // 3. Update feedback in database
+      const { error: updateError } = await supabase
+        .from('saved_data')
+        .update({ feedback: feedbackResult })
+        .eq('file_name', clip.name.trim());
+
+      if (updateError) {
+        console.error('Error updating feedback:', updateError);
+        alert('Failed to save feedback for ' + clip.name);
+        return;
+      }
+
+      alert('Feedback saved for ' + clip.name);
+
+      // 4. Update local state so UI updates immediately
+      setClips((prev) =>
+        prev.map((c) =>
+          c.name === clip.name ? { ...c, feedback: feedbackResult } : c
+        )
+      );
+
+    } catch (err) {
+      console.error('Unexpected error in handleGenerateFeedback:', err);
+      alert('Something went wrong for ' + clip.name);
+    }
+  };
+
   return (
     <div className='body-container'>
+      <h2 style={{color: "black", textAlign: 'left'}}>Temporary Feedback (Unsaved)</h2>
       <div className="homepage-banner">
         <h2>Record and analyze your voice</h2>
           {/* {!permission ? (
@@ -187,21 +387,35 @@ function Home() {
   </button>
 
 </div>
-      
+      <br/>
+      <h2 style={{color: "black", textAlign: 'left'}}>Hardware-Recorded Feedback (Saved)</h2>
       <div className='grid-container'>
-        <div onClick={openFeedback} className='grid-item'>
-          <div style={{width:"100px",height:"100px",backgroundColor:"lightgray",borderRadius:'5px'}}></div>
-          <h4 style={{color:"black"}}>Storing transcripts to-be-implemented</h4>
-          {/* <h4 style={{color: 'black'}}>hello</h4> */}
-        </div>
+        {clips.length > 0 ? clips.map((clip, index) => (
+        <div key={clip.name} className='grid-item' onClick={() => openFeedback(clip)}>
+            <div
+              style={{
+                color: "black",
+                cursor: "pointer",
+                textAlign: "center",
+                padding: "8px",
+                borderRadius: "5px",
+                backgroundColor: "#e0e0e0"
+              }}
+            >
+              {clip.name}  {/* or `Recording ${index + 1}` */}
+            </div>
+          </div>
+        )) : (
+          <div>Loading...</div>
+        )}
       </div>
 
       <div className="audio-controls">
-          {!permission ? (
+          {/* {!permission ? (
           <button onClick={getMicrophonePermission} type="button">
               Get Microphone
           </button>
-          ) : null}
+          ) : null} */}
           {permission && recordingStatus === "inactive" ? (
           <button onClick={startRecording} type="button">
               Start Recording
@@ -235,45 +449,44 @@ function Home() {
           {/* <button onClick={() => handleTranscribe.then(get_feedback(transcript).then())} style={{ border: 'none', background: 'none' }}>All-in-one</button>
           <button onClick={() => navigate('/Feedback')}>Feedback Page</button> */}
       </div>
+      {showPopup && selectedClip && (
+        <div className="overlay" onClick={closeFeedback}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={closeFeedback}>×</button>
 
-      {showPopup && (
-        <div className={`popup-overlay ${showPopup ? 'show' : ''}`} onClick={closeFeedback}>
-          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Feedback</h3>
-            <button onClick={closeFeedback}>Close</button>
+            <div className="clip-row">
+              <audio src={selectedClip.url} controls />
+              <p>{selectedClip.name}</p>
 
-            <p style={{ lineHeight: "1.6", color:'black' , textAlign: "justify" }}>
-              The speech presented a <span style={{ fontWeight: "bold" }}>clear central idea</span>, but the overall
-              <span style={{ color: "#2a7ae2", fontWeight: "bold" }}> flow of transitions </span>
-              between sections felt uneven. Early on, the introduction effectively captured attention,
-              yet it moved quickly into the main points without enough framing. Adding a short
-              <span style={{ fontStyle: "italic" }}> roadmap of the argument </span> would help the
-              audience understand how the ideas connect. In several moments, strong insights were
-              introduced but not fully developed, which slightly weakened the overall structure.
-            </p>
+              {selectedClip.transcript ? (
+                <span style={{ marginRight: '10px', color: 'green' }}>Transcript created</span>
+              ) : (
+                <button onClick={() => handleTranscribeClip(selectedClip)}>Transcribe</button>
+              )}
 
-            <p style={{ lineHeight: "1.6", color:'black', textAlign: "justify" }}>
-              From a content perspective, the examples used were
-              <span style={{ color: "#c0392b", fontWeight: "bold" }}> relevant and engaging </span>,
-              but the speech relied heavily on general statements rather than specific evidence.
-              Incorporating brief statistics, anecdotes, or references would strengthen credibility
-              and make the argument more persuasive. The conclusion did a good job reinforcing the
-              main theme, though it could be more memorable by returning to the opening idea or
-              offering a concise call to action.
-            </p>
+              {selectedClip.feedback ? (
+                <span style={{ marginRight: '10px', color: 'green' }}>Feedback created</span>
+              ) : (
+                <button onClick={() => handleGenerateFeedback(selectedClip)}>Generate Feedback</button>
+              )}
 
-            <p style={{ lineHeight: "1.6", color:'black', textAlign: "justify"   }}>
-              In terms of speaking conventions, the delivery appeared confident, though pacing
-              occasionally became rushed during complex explanations. Slowing down and emphasizing
-              key phrases—especially through
-              <span style={{ fontWeight: "bold", color: "#16a085" }}> intentional pauses </span>—would
-              improve clarity. Additionally, varying vocal tone and emphasizing important terms
-              would create stronger engagement. Overall, the speech demonstrates
-              <span style={{ fontStyle: "italic", color: "#8e44ad" }}> thoughtful preparation </span>,
-              and with smoother transitions, more concrete evidence, and deliberate pacing,
-              it could become a compelling and polished presentation.
-            </p>
-
+              {selectedClip.transcript && selectedClip.feedback && (
+                <button
+                  onClick={() =>
+                    navigate("/Feedback", {
+                      state: {
+                        transcript: selectedClip.transcript,
+                        feedback: selectedClip.feedback,
+                        words: selectedClip.words
+                      }
+                    })
+                  }
+                  style={{ marginLeft: '10px' }}
+                >
+                  Go to Feedback
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

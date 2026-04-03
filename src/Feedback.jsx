@@ -317,11 +317,10 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
 
 
     const breakdown = json_output?.filler_words?.breakdown || {};
-    const filler_total = json_output?.filler_words?.total_count ?? 0;
+
+    // const filler_total = json_output?.filler_words?.total_count ?? 0;
 
     const totalWords = wordsArray.length;
-    const fillerRatio = totalWords > 0 ? (filler_total / totalWords) : 0;
-    const fillerRatioPercent = (fillerRatio * 100).toFixed(1);
 
     // const top2 = Object.entries(breakdown)
     // .filter(([_, count]) => count > 0)
@@ -373,6 +372,23 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
                 : part
         );
     };
+
+    const countFillerWords = (text, fillerWords) => {
+        if (!fillerWords || fillerWords.length === 0) return 0;
+        const regex = new RegExp(
+            `\\b(${fillerWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
+            'gi'
+        );
+        const matches = text.match(regex);
+        return matches ? matches.length : 0;
+    };
+
+    const filler_total = countFillerWords(the_transcript, fillerWordsList);
+    const fillerRatio = totalWords > 0 ? (filler_total / totalWords) : 0;
+    const fillerRatioPercent = (fillerRatio * 100).toFixed(1);
+
+
+
 
     return(
         <div style={{ margin: '-30px', padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 30 }}>
