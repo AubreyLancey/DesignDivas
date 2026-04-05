@@ -199,7 +199,7 @@ function Home() {
 
     fetchClips();
   }, []);
-const handleTranscribeClip = async (clip) => {
+  const handleTranscribeClip = async (clip) => {
     try {
       // 1. Fetch row by file_name
       const { data: row, error: fetchError } = await supabase
@@ -322,6 +322,8 @@ const handleTranscribeClip = async (clip) => {
     }
   };
 
+  const [showTranscript, setShowTranscript] = useState(false);
+
   return (
     <div className='body-container'>
       <h2 style={{color: "black", textAlign: 'left'}}>Temporary Feedback (Unsaved)</h2>
@@ -369,24 +371,27 @@ const handleTranscribeClip = async (clip) => {
             </div>
           ) : null}
       </div>
+    {audio? (
+      <>
+        <button 
+          onClick={handleTranscribe} 
+          style={{ border: 'black', background: 'lightgray', color: 'black' }}
+        >
+          Generate Transcript
+        </button>
+
+        <button
+          onClick={handleGetFeedback}
+          style={{ border: 'none', background: 'lightgray', color: 'black' }}
+        >
+        Get Feedback
+        </button>
+      </>
+
+    ): null}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-  <button 
-    onClick={handleTranscribe} 
-    style={{ border: 'black', background: 'none' }}
-  >
-    Generate Transcript
-  </button>
 
-  <button
-    onClick={handleGetFeedback}
-    style={{ border: 'none', background: 'none' }}
-  >
-  Get Feedback
-  </button>
-
-</div>
       <br/>
       <h2 style={{color: "black", textAlign: 'left'}}>Hardware-Recorded Feedback (Saved)</h2>
       <div className='grid-container'>
@@ -410,53 +415,15 @@ const handleTranscribeClip = async (clip) => {
         )}
       </div>
 
-      <div className="audio-controls">
-          {/* {!permission ? (
-          <button onClick={getMicrophonePermission} type="button">
-              Get Microphone
-          </button>
-          ) : null} */}
-          {permission && recordingStatus === "inactive" ? (
-          <button onClick={startRecording} type="button">
-              Start Recording
-          </button>
-          ) : null}
-          {recordingStatus === "recording" ? (
-          <button onClick={stopRecording} type="button">
-              Stop Recording
-          </button>
-          ) : null}
-
-          {/* {audio ? (
-            <div className="audio-container">
-              <audio src={audio} controls></audio>
-              <a download href={audio}>
-                  Download Recording
-              </a>
-            </div>
-          ) : null} */}
-
-
-          {/* BUTTONS FOR TRANSCRIPT AND FEEDBACK */}
-          {/* <button onClick={async () => {
-            const result = await get_feedback(sampleInput);
-            //alert(result[1]);
-          }}>
-            TEST
-          </button> */}
-          
-
-          {/* <button onClick={() => handleTranscribe.then(get_feedback(transcript).then())} style={{ border: 'none', background: 'none' }}>All-in-one</button>
-          <button onClick={() => navigate('/Feedback')}>Feedback Page</button> */}
-      </div>
+      
       {showPopup && selectedClip && (
         <div className="overlay" onClick={closeFeedback}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={closeFeedback}>×</button>
 
             <div className="clip-row">
-              <audio src={selectedClip.url} controls />
               <p>{selectedClip.name}</p>
+              <audio src={selectedClip.url} controls />
 
               {selectedClip.transcript ? (
                 <span style={{ marginRight: '10px', color: 'green' }}>Transcript created</span>
@@ -471,7 +438,7 @@ const handleTranscribeClip = async (clip) => {
               )}
 
               {selectedClip.transcript && selectedClip.feedback && (
-                <button
+                <button style={{  background: "#f3f3f3", color: "#111", border: "1px solid #d1d5db"}}
                   onClick={() =>
                     navigate("/Feedback", {
                       state: {
@@ -481,10 +448,19 @@ const handleTranscribeClip = async (clip) => {
                       }
                     })
                   }
-                  style={{ marginLeft: '10px' }}
-                >
-                  Go to Feedback
+                >Go to Feedback
                 </button>
+              )}
+
+              {selectedClip.transcript ? (
+                <button style={{  background: "#f3f3f3", color: "#111", border: "1px solid #d1d5db"}} onClick={() => setShowTranscript(prev => !prev)}>
+                  {showTranscript ? "Hide Transcript" : "Show Transcript"}
+                </button>
+              ): null}
+              {showTranscript && selectedClip.transcript && (
+                <div className="transcript-box" style={{fontSize: "12px"}}>
+                  "{selectedClip.transcript}"
+                </div>
               )}
             </div>
           </div>

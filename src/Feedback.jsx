@@ -391,7 +391,7 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
 
 
     return(
-        <div style={{ margin: '-30px', padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 30 }}>
+        <div style={{ paddingBottom: '80px', padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 30 }}>
             
             <div style={{ width: '100%', maxWidth: '600px' }}>
                 {/* Header */}
