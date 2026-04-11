@@ -324,6 +324,16 @@ function Home() {
 
   const [showTranscript, setShowTranscript] = useState(false);
 
+
+  const [pendingAction, setPendingAction] = useState(null);
+  const SPEECH_TYPES = [
+    "Unspecified",
+    "Casual conversation",
+    "Work presentation",
+    "Class presentation",
+    "Other"
+  ];
+
   return (
     <div className='body-container'>
       <h2 style={{color: "black", textAlign: 'left'}}>Temporary Feedback (Unsaved)</h2>

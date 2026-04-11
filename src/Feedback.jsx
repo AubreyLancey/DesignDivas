@@ -3,6 +3,62 @@ import 'react-circular-progressbar/dist/styles.css';
 import ReactSpeedometer from "react-d3-speedometer"
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useLocation } from 'react-router-dom';
+import {useState} from 'react'
+
+const InfoPopup = ({ text }) => {
+    const [visible, setVisible] = useState(false);
+        return (
+            <span style={{ position: 'relative', display: 'inline-block', marginLeft: '6px' }}>
+                <button
+                    onClick={() => setVisible(v => !v)}
+                    style={{
+                        background: '#17a2b8',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        lineHeight: '18px',
+                        padding: 0,
+                    }}
+                >
+                    ?
+                </button>
+                {visible && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '125%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: '#333',
+                        color: '#fff',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        width: '150px',
+                        textAlign: 'center',
+                        zIndex: 100,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        lineHeight: '1.4',
+                    }}>
+                        {text}
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            borderWidth: '5px',
+                            borderStyle: 'solid',
+                            borderColor: '#333 transparent transparent transparent',
+                        }} />
+                    </div>
+                )}
+            </span>
+        );
+};
 
 
 function Feedback() {
@@ -388,6 +444,8 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
     const fillerRatioPercent = (fillerRatio * 100).toFixed(1);
 
 
+    const threeLowest = [...wordsArray].sort((a, b) => a.confidence - b.confidence).slice(0, 3);
+
 
 
     return(
@@ -414,7 +472,7 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', marginBottom: '40px', alignItems: 'center' }}>
                     {/* Word Pronunciation */}
                     <div style={{ textAlign: 'center', width: '100%' }}>
-                        <h4 style={{color: '#333', marginBottom: '15px'}}>Word Pronunciation</h4>
+                        <h4 style={{color: '#333', marginBottom: '15px'}}>Word Pronunciation <InfoPopup text="How clearly each word was spoken, based on the transcription confidence score. Can manifest in mispronunciation or merged words."/></h4>
                         <div style={{ width: '120px', margin: '0 auto' }}>
                             <CircularProgressbar
                                 value={confidence_aggregate * 100}
@@ -424,12 +482,17 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
                                     text: { fill: '#333', fontSize: '18px', fontWeight: 'bold' }
                                 }}
                             />
+                            <p style={{fontSize: "10px"}}>Most unclear words: {threeLowest.map((word, i) => (
+                            <div key={i}>
+                                {word.text} ({(word.confidence * 100).toFixed(1)}% at {(word.start / 1000).toFixed(2)}s)
+                            </div>
+                            ))}</p>
                         </div>
                     </div>
 
                     {/* Words Per Minute */}
                     <div style={{ textAlign: 'center', width: '100%' }}>
-                        <h4 style={{color: '#333'}}>Words Per Minute (WPM)</h4>
+                        <h4 style={{color: '#333'}}>Words Per Minute (WPM) <InfoPopup text="Speed of speech. 130 to 160 words per minute is the general concensus for ideal speaking pace."/></h4>
                         <ReactSpeedometer 
                             ringWidth={50}
                             height={200}
@@ -445,7 +508,7 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
                         />
                     </div>
                     <div style={{ textAlign: 'center', width: '100%'}}>
-                        <h4 style={{color: '#333'}}>Over Time</h4>
+                        <h4 style={{color: '#333'}}>Over Time <InfoPopup text="Words per minute over time. Each point represents the avg. speaking speed over a 10s period. "/></h4>
                         <div style={{display: "flex", justifyContent: 'center'}}>
                             <LineChart width={300} height={200} data={intervals} margin={{bottom:30}}>
                                 <XAxis dataKey="time" label={{ value: "Time (s)", position: "bottom", offset: 0 }}
@@ -459,7 +522,7 @@ In addition, The chassis is made of PLA 3D printed material, providing an eco-fr
 
                     {/* Filler Words */}
                     <div style={{ textAlign: 'center', width: '100%' }}>
-                        <h4 style={{color: '#333'}}>Filler Words</h4>
+                        <h4 style={{color: '#333'}}>Filler Words<InfoPopup text="Number of filler words (e.g., like, um)"/></h4>
                         <p style={{fontSize: '32px', fontWeight: 'bold', color: '#dc3545', margin: '5px 0'}}>
                             {filler_total} <br/>
                             <span style={{ fontSize: '14px', color: 'gray' }}> ({fillerRatioPercent}% of words) </span>
